@@ -46,6 +46,11 @@ if [ -z "$DART_SDK_URL" ]; then
     exit 1
 fi
 
+if [ -z "$FLUTTER_SDK_URL" ]; then
+    message "ERROR: you must specify FLUTTER_SDK_URL to a Flutter SDK for Linux."
+    exit 1
+fi
+
 cd $BUILD_DIR
 
 message "-----> Installing Dart VM via URL $DART_SDK_URL"
@@ -71,14 +76,39 @@ case "${DART_SDK_URL: -3}" in
     ;;
 esac
 
+
+message "-----> Installing Flutter via URL $FLUTTER_SDK_URL"
+
+cd $CACHE_DIR
+
+case "${FLUTTER_SDK_URL: -3}" in
+  tar)
+    message "SDK: tarball detected"
+    curl -L -k $FLUTTER_SDK_URL -o - | tar xzf -
+    ;;
+  zip)
+    message "SDK: zip detected"
+    curl -L -k $FLUTTER_SDK_URL > flutter-sdk.zip ; unzip -o -q flutter-sdk.zip
+    ;;
+  *)
+    message "Invalid FLUTTER SDK URL"
+    ;;
+esac
+
+
 message "-----> Copy Dart binaries to app root"
 cp -r $CACHE_DIR/dart-sdk $BUILD_DIR
+
+
+message "-----> Copy Flutter binaries to app root"
+cp -r $CACHE_DIR/flutter-sdk $BUILD_DIR
 
 # we need to copy the sdk into the /app folder in order for the sdk libraries
 # to be referenced correctly
 # reason being that the /tmp folder will be deleted after build, and /app
 # resembles the location of the ready built app
 cp -r $CACHE_DIR/dart-sdk /app
+cp -r $CACHE_DIR/flutter-sdk /app
 
 DART_BIN=`ls -l /app/dart-sdk/bin/dart`
 message "-----> Dart cmd found at $DART_BIN"
